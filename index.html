@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CozySuite</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;600;700&family=Merriweather:wght@400;700&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Highlight.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <!-- Quill CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- Custom Title Bar for Electron -->
+    <div class="titlebar">
+      <div class="titlebar-drag-region"></div>
+      <div class="window-controls">
+        <button id="minimize-btn" class="control-btn"><i class="ph ph-minus"></i></button>
+        <button id="maximize-btn" class="control-btn"><i class="ph ph-square"></i></button>
+        <button id="close-btn" class="control-btn close"><i class="ph ph-x"></i></button>
+      </div>
+    </div>
+
+    <div class="app-layout">
+      <!-- Top Header / Tab Bar -->
+      <header class="top-header">
+        <div class="header-left">
+          <div class="brand">
+            <i class="ph-fill ph-flower-lotus" style="color: var(--accent-primary);"></i> CozySuite
+          </div>
+          <nav class="top-tabs">
+            <button class="tab-btn active" data-tab="write"><i class="ph ph-file-text"></i> Docs</button>
+            <button class="tab-btn" data-tab="calculate"><i class="ph ph-table"></i> Sheets</button>
+            <button class="tab-btn" data-tab="present"><i class="ph ph-presentation-chart"></i> Slides</button>
+            <button class="tab-btn" data-tab="read"><i class="ph ph-file-pdf"></i> PDF</button>
+            <button class="tab-btn" data-tab="board"><i class="ph ph-palette"></i> Board</button>
+            <button class="tab-btn" data-tab="study"><i class="ph ph-brain"></i> Study</button>
+          </nav>
+        </div>
+        
+        <div class="header-center">
+          <div class="title-input-wrapper" style="margin-left: 1rem;">
+            <input type="text" id="global-doc-title" value="Untitled Document.docx" />
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <button class="icon-btn" id="split-view-btn" title="Split View (PDF + Docs)"><i class="ph ph-columns"></i></button>
+          <button class="icon-btn" id="scratchpad-toggle" title="Toggle Scratchpad"><i class="ph ph-notepad"></i></button>
+          <button class="icon-btn" id="focus-mode-btn" title="Focus Mode"><i class="ph ph-corners-out"></i></button>
+          <div class="divider"></div>
+          
+          <div class="privacy-badge" title="100% Offline. Zero Telemetry.">
+            <i class="ph ph-shield-check"></i> Offline
+          </div>
+          <div class="dropdown-wrapper">
+            <button class="action-btn secondary dropdown-toggle" id="file-menu-btn"><i class="ph ph-list"></i> File</button>
+            <div class="dropdown-menu" id="file-dropdown-menu" style="display: none;">
+              <button id="global-open-btn"><i class="ph ph-folder-open"></i> Open File</button>
+              <button id="global-export-btn"><i class="ph ph-export"></i> Export</button>
+              <button id="global-save-btn"><i class="ph ph-floppy-disk"></i> Save</button>
+            </div>
+          </div>
+          
+          <div class="divider"></div>
+          <button class="icon-btn theme-toggle" id="theme-toggle" title="Toggle Light/Dark Mode">
+            <i class="ph ph-moon" id="theme-icon"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="main-workspace">
+        <!-- DOCS TAB -->
+        <div id="tab-write" class="tab-content active">
+          <div class="contextual-ribbon">
+            <div class="ribbon-actions" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+              <button class="ribbon-btn" id="dictation-btn" title="Voice Typing"><i class="ph ph-microphone"></i></button>
+              <button class="ribbon-btn" id="tts-btn" title="Read Aloud"><i class="ph ph-speaker-high"></i></button>
+              <div class="ribbon-divider"></div>
+              <button class="ribbon-icon-btn" id="docs-insert-table-btn" title="Insert Table"><i class="ph ph-table"></i></button>
+              <div class="ribbon-divider"></div>
+              <button class="ribbon-btn" id="history-toggle-btn" title="Time Machine"><i class="ph ph-clock-counter-clockwise"></i> History</button>
+              <button class="ribbon-btn" id="clean-paste-toggle" title="Clean Paste: Off"><i class="ph ph-paint-brush"></i> Clean Paste</button>
+            </div>
+          </div>
+          <div class="canvas-scroll-area" id="docs-scroll-area">
+            <div class="a4-canvas">
+              <div id="editor-container"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- SHEETS TAB -->
+        <div id="tab-calculate" class="tab-content">
+          <div class="contextual-ribbon">
+            <div class="ribbon-actions">
+              <button class="ribbon-btn" id="excel-import-btn"><i class="ph ph-upload-simple"></i> Import CSV</button>
+              <input type="file" id="excel-import-input" style="display: none;" accept=".csv" />
+              <button class="ribbon-btn" id="excel-export-csv-btn"><i class="ph ph-file-csv"></i> Export CSV</button>
+              <button class="ribbon-btn" id="excel-export-xlsx-btn"><i class="ph ph-file-xls"></i> Export XLSX</button>
+            </div>
+          </div>
+          <div class="editor-wrapper spreadsheet-wrapper">
+            <div id="spreadsheet-mount-container" style="display: flex; flex-direction: column; flex: 1 1 auto; height: 100%; min-height: 600px; width: 100%; position: relative; overflow: hidden;">
+              <div id="spreadsheet-container" style="height: calc(100vh - 150px); width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDES TAB -->
+        <div id="tab-present" class="tab-content">
+          <div class="contextual-ribbon">
+            <div class="ribbon-actions">
+              <button class="ribbon-btn" id="slides-add-btn"><i class="ph ph-plus"></i> New Slide</button>
+              <button class="ribbon-btn" id="slides-insert-img-btn"><i class="ph ph-image"></i> Image</button>
+              <input type="file" id="slides-img-input" accept="image/*" style="display:none;" />
+              <button class="ribbon-btn" id="slides-insert-link-btn"><i class="ph ph-link"></i> Link</button>
+              <button class="ribbon-btn primary" id="slides-present-btn"><i class="ph ph-play"></i> Present</button>
+            </div>
+          </div>
+          <div class="slides-layout">
+            <div class="slides-sidebar">
+              <div id="slides-thumbnails" class="slides-thumbnails"></div>
+            </div>
+            <div class="slides-main canvas-scroll-area">
+              <div class="slide-canvas-container" id="slide-canvas-container">
+                <div class="slide-canvas" id="active-slide">
+                  <div class="slide-bg-picker">
+                    <input type="color" id="slide-bg-color" value="#ffffff" title="Change Background Color" />
+                  </div>
+                  <div class="slide-content" id="slide-content-area">
+                    <h1 class="slide-title" contenteditable="true" data-placeholder="Click to add title"></h1>
+                    <h2 class="slide-subtitle" contenteditable="true" data-placeholder="Click to add subtitle"></h2>
+                    <ul class="slide-bullets" contenteditable="true" data-placeholder="Click to add text"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDF TAB -->
+        <div id="tab-read" class="tab-content">
+          <div class="contextual-ribbon">
+            <div class="ribbon-actions pdf-toolbar" id="pdf-toolbar" style="display: none;">
+              <button id="pdf-prev-btn" class="ribbon-btn"><i class="ph ph-caret-left"></i> Previous</button>
+              <button id="pdf-next-btn" class="ribbon-btn">Next <i class="ph ph-caret-right"></i></button>
+              <div class="ribbon-divider"></div>
+              <button id="pdf-zoom-out-btn" class="ribbon-icon-btn"><i class="ph ph-magnifying-glass-minus"></i></button>
+              <button id="pdf-zoom-in-btn" class="ribbon-icon-btn"><i class="ph ph-magnifying-glass-plus"></i></button>
+            </div>
+          </div>
+          <div class="canvas-scroll-area pdf-wrapper" id="pdf-scroll-area">
+            <div id="pdf-dropzone" class="pdf-dropzone">
+              <i class="ph ph-cloud-arrow-up"></i>
+              <h2>Toss a PDF here!</h2>
+              <p>Drag & drop to read in a cozy environment.</p>
+              <input type="file" id="pdf-file-input" accept=".pdf" style="display: none;" />
+              <button id="pdf-browse-btn" class="action-btn secondary" style="margin-top: 1rem;">Browse Files</button>
+            </div>
+            <div id="pdf-viewer-container" class="pdf-viewer-container" style="display: none;">
+              <canvas id="pdf-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOARD TAB -->
+        <div id="tab-board" class="tab-content">
+          <div id="excalidraw-container" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <!-- STUDY TAB -->
+        <div id="tab-study" class="tab-content">
+          <div class="contextual-ribbon">
+            <div class="ribbon-actions">
+              <button class="ribbon-btn" id="study-review-btn"><i class="ph ph-play-circle"></i> Review Cards</button>
+              <button class="ribbon-btn" id="study-add-btn"><i class="ph ph-plus"></i> Manual Card</button>
+            </div>
+          </div>
+          <div class="canvas-scroll-area study-wrapper" id="study-grid">
+            <!-- Flashcards go here -->
+          </div>
+        </div>
+      </main>
+
+      <!-- Bottom Status Bar -->
+      <footer class="status-bar">
+        <div class="status-left" id="status-left-content">
+          <!-- Populated by JS -->
+        </div>
+        <div class="status-right">
+          <!-- Ambient Audio -->
+          <div class="ambient-audio-container">
+            <button class="icon-btn" id="ambient-audio-btn" title="Focus Music"><i class="ph ph-headphones"></i></button>
+            <div id="ambient-audio-popup" class="ambient-audio-popup" style="display: none;">
+              <div class="audio-toggle"><span>Rain</span> <input type="checkbox" id="audio-rain" /></div>
+              <div class="audio-toggle"><span>Cafe</span> <input type="checkbox" id="audio-cafe" /></div>
+              <div class="audio-toggle"><span>White Noise</span> <input type="checkbox" id="audio-noise" /></div>
+            </div>
+          </div>
+          <div class="status-divider"></div>
+          <!-- Pomodoro Timer -->
+          <div class="pomodoro-timer" id="pomodoro-container">
+            <span id="pomodoro-time">25:00</span>
+            <button id="pomodoro-btn" class="icon-btn" style="width:24px; height:24px; margin-left:4px;"><i class="ph ph-play"></i></button>
+          </div>
+          <div class="status-divider"></div>
+          <div class="zoom-control">
+            <i class="ph ph-minus" style="cursor:pointer"></i>
+            <span>100%</span>
+            <i class="ph ph-plus" style="cursor:pointer"></i>
+          </div>
+          <div class="status-divider"></div>
+          <div class="save-status">
+            <span class="status-dot"></span> Saved locally
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <!-- Fullscreen Presentation Container -->
+    <div id="presentation-container" class="presentation-container" style="display: none;">
+      <div id="presentation-slide" class="presentation-slide"></div>
+    </div>
+
+    <!-- Scratchpad Drawer -->
+    <div id="scratchpad-drawer" class="scratchpad-drawer">
+      <div class="scratchpad-header">
+        <h3><i class="ph ph-notepad"></i> Scratchpad</h3>
+        <button id="close-scratchpad" class="icon-btn"><i class="ph ph-x"></i></button>
+      </div>
+      <textarea id="scratchpad-textarea" placeholder="Jot down quick thoughts, citations, or formulas..."></textarea>
+    </div>
+
+    <!-- Focus Mode Exit Button -->
+    <button id="focus-exit-btn" class="focus-exit-btn" style="display: none;"><i class="ph ph-corners-in"></i></button>
+
+    <!-- Slide Link Modal -->
+    <div id="slide-link-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3>Insert Link</h3>
+        <input type="text" id="slide-link-url" placeholder="Web URL or #slide-number" />
+        <div class="modal-actions">
+          <button class="action-btn secondary" id="slide-link-cancel">Cancel</button>
+          <button class="action-btn primary" id="slide-link-save">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Find and Replace Widget -->
+    <div id="find-replace-widget" class="find-replace-widget" style="display: none;">
+      <div class="fr-header">
+        <span style="font-weight: 600; font-size: 0.85rem;"><i class="ph ph-magnifying-glass"></i> Find & Replace</span>
+        <button id="close-fr-btn" class="icon-btn"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="fr-body">
+        <div class="fr-input-group">
+          <input type="text" id="fr-find-input" placeholder="Find..." />
+          <div class="fr-nav">
+            <button id="fr-prev-btn" class="icon-btn"><i class="ph ph-arrow-up"></i></button>
+            <button id="fr-next-btn" class="icon-btn"><i class="ph ph-arrow-down"></i></button>
+          </div>
+        </div>
+        <div class="fr-input-group">
+          <input type="text" id="fr-replace-input" placeholder="Replace with..." />
+        </div>
+        <div class="fr-actions">
+          <button class="action-btn secondary" id="fr-replace-btn">Replace</button>
+          <button class="action-btn secondary" id="fr-replace-all-btn">Replace All</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insert Table Modal (Word) -->
+    <div id="insert-table-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3>Insert Table</h3>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <input type="number" id="table-rows-input" placeholder="Rows" value="3" min="1" max="20" style="width: 100px;"/>
+          <span style="align-self: center;">x</span>
+          <input type="number" id="table-cols-input" placeholder="Cols" value="3" min="1" max="20" style="width: 100px;"/>
+        </div>
+        <div class="modal-actions" style="margin-top: 1.5rem;">
+          <button class="action-btn secondary" id="table-cancel">Cancel</button>
+          <button class="action-btn primary" id="table-insert-confirm">Insert</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div id="shortcuts-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3><i class="ph ph-keyboard"></i> Keyboard Shortcuts</h3>
+        <ul style="list-style: none; padding: 0; margin-top: 1rem; font-size: 0.95rem; line-height: 1.8;">
+          <li><kbd>Ctrl + 1</kbd> Docs Tab</li>
+          <li><kbd>Ctrl + 2</kbd> Sheets Tab</li>
+          <li><kbd>Ctrl + 3</kbd> Slides Tab</li>
+          <li><kbd>Ctrl + 4</kbd> PDF Tab</li>
+          <li><kbd>Ctrl + 5</kbd> Board Tab</li>
+          <li><kbd>Ctrl + 6</kbd> Study Tab</li>
+          <li><kbd>Shift + ?</kbd> Toggle this menu</li>
+          <li><kbd>Ctrl + F / H</kbd> Find & Replace</li>
+          <li><kbd>Esc</kbd> Exit Focus Mode</li>
+        </ul>
+        <div class="modal-actions" style="margin-top: 1.5rem;">
+          <button class="action-btn primary" id="close-shortcuts-btn">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add to Flashcards Modal -->
+    <div id="add-flashcard-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3>Add to Flashcards</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.5rem;">Front (Captured Highlight):</p>
+        <div id="flashcard-front-preview" style="padding:0.5rem; background:var(--bg-ribbon); border-radius:var(--radius-sm); font-size:0.9rem; margin-bottom: 1rem; max-height:100px; overflow-y:auto;"></div>
+        <input type="text" id="flashcard-back-input" placeholder="Type the back of the card..." style="margin-bottom:1rem;" />
+        <div class="modal-actions">
+          <button class="action-btn secondary" id="flashcard-cancel-btn">Cancel</button>
+          <button class="action-btn primary" id="flashcard-save-btn">Save Card</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Flashcards Fullscreen Modal -->
+    <div id="review-flashcards-modal" class="presentation-container" style="display: none; flex-direction:column;">
+      <button id="close-review-btn" class="focus-exit-btn" style="display: flex;"><i class="ph ph-corners-in"></i></button>
+      <div id="review-card" style="width:600px; height:400px; background:var(--bg-card); color:var(--text-main); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; text-align:center; box-shadow:var(--shadow-elevated); cursor:pointer;">
+        <h2 id="review-card-text" style="font-size:2rem; font-weight:600;"></h2>
+        <p style="margin-top:auto; font-size:0.85rem; color:var(--text-muted);">Click to flip</p>
+      </div>
+      <div style="margin-top:2rem; display:flex; gap:1rem;">
+        <button id="review-prev-btn" class="action-btn secondary"><i class="ph ph-arrow-left"></i> Prev</button>
+        <button id="review-next-btn" class="action-btn primary">Next <i class="ph ph-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Time Machine Drawer -->
+    <div id="time-machine-drawer" class="scratchpad-drawer" style="bottom: 28px; top: auto; height: 120px; width: 100%; right: 0; left: 0; border-left: none; border-top: 1px solid var(--border-color); flex-direction: row; align-items:center; padding: 1rem 2rem; transform: translateY(100%); transition: transform 0.3s; display:none;">
+      <div style="flex:1;">
+        <h3 style="margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;"><i class="ph ph-clock-counter-clockwise"></i> Time Machine (Local History)</h3>
+        <input type="range" id="history-slider" min="0" max="0" value="0" style="width: 100%;" />
+        <div id="history-timestamp" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem;">Current</div>
+      </div>
+      <div style="margin-left: 2rem;">
+        <button id="close-history-btn" class="action-btn secondary">Close</button>
+        <button id="restore-history-btn" class="action-btn primary" style="margin-top:0.5rem;">Restore</button>
+      </div>
+    </div>
+
+    <!-- Floating Add to Flashcard Button -->
+    <button id="floating-add-flashcard-btn" class="action-btn primary" style="position:fixed; display:none; z-index:9999; border-radius:var(--radius-full); box-shadow:var(--shadow-elevated);"><i class="ph ph-brain"></i> Add Card</button>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
